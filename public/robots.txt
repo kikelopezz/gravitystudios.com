@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /crm
+Disallow: /api/
+
+Sitemap: https://gravitystudios.com/sitemap.xml

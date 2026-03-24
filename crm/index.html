@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM — Discord Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="crm.css">
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══════════════════════════════════════ -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">Discord Studios <span class="lime">CRM</span></div>
+    <form id="loginForm">
+      <div class="lf-group">
+        <label>Usuario</label>
+        <input type="text" id="loginUser" autocomplete="username" required>
+      </div>
+      <div class="lf-group">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" autocomplete="current-password" required>
+      </div>
+      <div class="login-err" id="loginErr"></div>
+      <button type="submit" id="loginBtn" class="login-btn">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<!-- ═══ APP ══════════════════════════════════════════ -->
+<div id="appWrap" style="display:none;">
+
+  <aside class="sidebar">
+    <div class="sb-logo">DS<span class="lime">.</span>crm</div>
+    <nav class="sb-nav">
+      <button class="sb-link active" data-view="dashboard">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/></svg>
+        Dashboard
+      </button>
+      <button class="sb-link" data-view="solicitudes">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+        Solicitudes
+        <span class="sb-badge" id="sbBadge" style="display:none;"></span>
+      </button>
+    </nav>
+    <button class="sb-logout" id="logoutBtn">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+      Salir
+    </button>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="tb-title" id="tbTitle">Dashboard</span>
+      <span class="tb-date" id="tbDate"></span>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view" id="vDashboard">
+      <div class="stats-row">
+        <div class="scard"><div class="sc-label">TOTAL</div><div class="sc-val" id="stTotal">0</div></div>
+        <div class="scard scard-lime"><div class="sc-label">PENDIENTES</div><div class="sc-val lime" id="stPendiente">0</div></div>
+        <div class="scard"><div class="sc-label">EN PROCESO</div><div class="sc-val" id="stProceso">0</div></div>
+        <div class="scard"><div class="sc-label">COMPLETADOS</div><div class="sc-val" id="stCompletado">0</div></div>
+        <div class="scard"><div class="sc-label">CANCELADOS</div><div class="sc-val" id="stCancelado">0</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Últimas solicitudes</span>
+          <button class="panel-link" data-view="solicitudes">Ver todas →</button>
+        </div>
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th>Ticket</th><th>Cliente</th><th>Servicio</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+            <tbody id="recentBody"><tr><td colspan="6" class="tbl-empty">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOLICITUDES -->
+    <div class="view" id="vSolicitudes" style="display:none;">
+      <div class="filters">
+        <input type="text" id="fSearch" class="f-input" placeholder="Buscar nombre, email, ticket...">
+        <select id="fEstado" class="f-select">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="completado">Completado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+        <select id="fServicio" class="f-select">
+          <option value="">Todos los servicios</option>
+          <option value="web">Página Web</option>
+          <option value="discord_bot">Discord Bot</option>
+          <option value="video_editing">Video Editing</option>
+          <option value="gta_script">GTA V Script</option>
+          <option value="otro">Otro</option>
+        </select>
+        <button id="fBtn" class="f-btn">Filtrar</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Ticket</th><th>Cliente</th><th>Email</th><th>Discord</th><th>Servicio</th><th>Pack</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+          <tbody id="solBody"><tr><td colspan="9" class="tbl-empty">Cargando...</td></tr></tbody>
+        </table>
+      </div>
+      <div id="paginacion"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL DETALLE ════════════════════════════════ -->
+<div id="modalFondo" style="display:none;">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div class="modal-titulo" id="modalTitulo">Solicitud</div>
+        <div class="modal-ticket" id="modalTicket"></div>
+      </div>
+      <button class="modal-cerrar" id="modalCerrar">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-grid">
+        <div class="ig-fila"><span class="ig-key">Cliente</span><span id="mNombre"></span></div>
+        <div class="ig-fila"><span class="ig-key">Email</span><span id="mEmail"></span></div>
+        <div class="ig-fila"><span class="ig-key">Discord</span><span id="mDiscord"></span></div>
+        <div class="ig-fila"><span class="ig-key">Servicio</span><span id="mServicio"></span></div>
+        <div class="ig-fila"><span class="ig-key">Pack</span><span id="mPack"></span></div>
+        <div class="ig-fila"><span class="ig-key">Presupuesto</span><span id="mPresupuesto"></span></div>
+        <div class="ig-fila ig-full"><span class="ig-key">Descripción</span><p id="mDesc"></p></div>
+      </div>
+      <div class="modal-editar">
+        <div class="me-grupo">
+          <label>Estado</label>
+          <select id="eEstado">
+            <option value="pendiente">Pendiente</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="completado">Completado</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div class="me-grupo" style="margin-top:14px;">
+          <label>Notas internas</label>
+          <textarea id="eNotas" rows="4" placeholder="Solo visibles en el CRM..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="btn-eliminar" id="btnEliminar">Eliminar</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-cancelar" id="btnCancelar">Cancelar</button>
+        <button class="btn-guardar" id="btnGuardar">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL CONFIRMAR ELIMINAR ══════════════════════ -->
+<div id="confirmFondo" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <div class="modal-titulo">¿Eliminar solicitud?</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirmTexto" style="font-size:13px;color:#888;font-family:var(--mono);"></p>
+    </div>
+    <div class="modal-pie" style="border-top:none;padding-top:0;">
+      <button class="btn-cancelar" id="confirmNo">Cancelar</button>
+      <button class="btn-eliminar" id="confirmSi">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="crm.js"></script>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estado de tu pedido — Gravity Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .status-wrap {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px 60px;
+    }
+    .status-box {
+      width: 100%; max-width: 580px;
+    }
+    .status-tag {
+      font-family: var(--mono);
+      font-size: 11px; color: var(--lime);
+      text-transform: uppercase; letter-spacing: .15em;
+      margin-bottom: 14px; display: block;
+    }
+    .status-title {
+      font-family: var(--disp);
+      font-size: clamp(36px, 7vw, 72px);
+      color: var(--cream); line-height: .95;
+      letter-spacing: .03em; margin-bottom: 12px;
+    }
+    .status-sub {
+      font-size: 15px; color: var(--text);
+      line-height: 1.65; margin-bottom: 36px;
+    }
+
+    /* Search form */
+    .search-form {
+      display: flex; gap: 10px; margin-bottom: 40px;
+    }
+    .search-input {
+      flex: 1;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 13px 18px;
+      font-family: var(--mono); font-size: 15px;
+      color: var(--cream); outline: none;
+      text-transform: uppercase; letter-spacing: .05em;
+      transition: border-color .2s;
+    }
+    .search-input:focus { border-color: rgba(200,255,0,.4); box-shadow: 0 0 0 3px rgba(200,255,0,.06); }
+    .search-input::placeholder { color: var(--muted); text-transform: none; letter-spacing: 0; font-family: var(--font); }
+    .search-btn {
+      background: var(--lime); color: #000;
+      border: none; border-radius: var(--r);
+      padding: 13px 24px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: var(--font); transition: .2s; white-space: nowrap;
+    }
+    .search-btn:hover { background: #fff; }
+    .search-btn:disabled { opacity: .5; cursor: default; }
+
+    /* Result card */
+    .result-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      display: none;
+    }
+    .result-card.visible { display: block; }
+
+    .rc-header {
+      background: var(--bg3);
+      padding: 20px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .rc-ticket {
+      font-family: var(--mono); font-size: 18px;
+      font-weight: 700; color: var(--lime); letter-spacing: .06em;
+    }
+
+    /* Estado badge grande */
+    .estado-big {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 8px 18px; border-radius: 30px;
+      font-family: var(--mono); font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .estado-big::before {
+      content: ''; width: 8px; height: 8px;
+      border-radius: 50%; background: currentColor;
+      flex-shrink: 0;
+    }
+    .eb-pendiente  { background: rgba(255,215,64,.1);  color: #ffd740; }
+    .eb-en_proceso { background: rgba(200,255,0,.1);   color: #c8ff00; animation: pulseGreen 2s infinite; }
+    .eb-completado { background: rgba(105,255,133,.1); color: #69ff85; }
+    .eb-cancelado  { background: rgba(255,82,82,.1);   color: #ff5252; }
+
+    @keyframes pulseGreen {
+      0%,100% { box-shadow: 0 0 0 0 rgba(200,255,0,.3); }
+      50%      { box-shadow: 0 0 0 6px rgba(200,255,0,0); }
+    }
+
+    .rc-body { padding: 24px; }
+
+    .rc-row {
+      display: flex; gap: 12px;
+      padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,.05);
+      font-size: 14px;
+    }
+    .rc-row:last-child { border-bottom: none; }
+    .rc-key { font-family: var(--mono); font-size: 11px; color: var(--muted); min-width: 120px; padding-top: 2px; }
+    .rc-val { color: var(--text); flex: 1; }
+
+    /* Timeline de estados */
+    .timeline {
+      margin: 28px 0 0;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .timeline-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); margin-bottom: 20px;
+    }
+    .timeline-steps {
+      display: flex; gap: 0;
+      position: relative;
+    }
+    .timeline-steps::before {
+      content: '';
+      position: absolute;
+      top: 14px; left: 14px; right: 14px;
+      height: 2px; background: var(--border);
+      z-index: 0;
+    }
+    .tl-step {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 8px; position: relative; z-index: 1;
+    }
+    .tl-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      transition: .3s; flex-shrink: 0;
+    }
+    .tl-step.done .tl-dot {
+      background: var(--lime); border-color: var(--lime);
+      color: #000;
+    }
+    .tl-step.active .tl-dot {
+      border-color: var(--lime); color: var(--lime);
+      background: rgba(200,255,0,.1);
+      box-shadow: 0 0 0 4px rgba(200,255,0,.15);
+    }
+    .tl-label {
+      font-size: 11px; color: var(--muted);
+      text-align: center; line-height: 1.4;
+      font-family: var(--mono);
+    }
+    .tl-step.done .tl-label   { color: var(--lime); }
+    .tl-step.active .tl-label { color: var(--cream); }
+
+    /* Error */
+    .error-msg {
+      background: rgba(255,82,82,.08); border: 1px solid rgba(255,82,82,.2);
+      border-radius: 10px; padding: 16px 20px;
+      font-size: 14px; color: #ff5252; display: none; margin-bottom: 16px;
+    }
+    .error-msg.visible { display: block; }
+
+    :root {
+      --bg:#0e0d0b; --bg2:#161511; --bg3:#1e1d18;
+      --border:rgba(255,255,255,.07);
+      --cream:#f0ede6; --text:#a09d96; --muted:#504e48;
+      --lime:#c8ff00; --disp:'Anton',sans-serif;
+      --mono:'JetBrains Mono',monospace;
+      --r:8px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <a href="/" class="nav-logo" aria-label="Gravity Studios">
+      <svg height="34" viewBox="0 0 220 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+        <g>
+          <ellipse cx="18" cy="18" rx="16" ry="16" stroke="#c8ff00" stroke-width="0.8" opacity="0.25"/>
+          <ellipse cx="18" cy="18" rx="12.5" ry="11" stroke="#c8ff00" stroke-width="0.9" opacity="0.4" transform="rotate(15 18 18)"/>
+          <ellipse cx="18" cy="18" rx="9" ry="8" stroke="#c8ff00" stroke-width="1" opacity="0.55" transform="rotate(-10 18 18)"/>
+          <ellipse cx="18" cy="18" rx="6" ry="5.2" stroke="#c8ff00" stroke-width="1.1" opacity="0.7" transform="rotate(20 18 18)"/>
+          <ellipse cx="18" cy="18" rx="3.5" ry="3" stroke="#c8ff00" stroke-width="1.2" opacity="0.85" transform="rotate(-5 18 18)"/>
+          <circle cx="18" cy="18" r="1.8" fill="#c8ff00"/>
+        </g>
+        <text x="42" y="13" font-family="Anton, sans-serif" font-size="11" fill="#a09d96" letter-spacing="2">GRAVITY</text>
+        <text x="42" y="30" font-family="Anton, sans-serif" font-size="17" fill="#f0ede6" letter-spacing="1.5">STUDIOS<tspan fill="#c8ff00" font-size="20">.</tspan></text>
+      </svg>
+    </a>
+    <div class="nav-center">
+      <a href="/#servicios">Servicios</a>
+      <a href="/#sobre-mi">Sobre mí</a>
+      <a href="/#contacto">Contacto</a>
+    </div>
+    <a href="/#contacto" class="nav-pill">Contratar →</a>
+  </nav>
+
+  <div class="status-wrap">
+    <div class="status-box">
+      <span class="status-tag">/ Estado del pedido</span>
+      <h1 class="status-title">¿CÓMO VA<br>TU PROYECTO<span style="color:var(--lime);">?</span></h1>
+      <p class="status-sub">Introduce el número de ticket que recibiste al enviar el formulario para ver el estado actual de tu solicitud.</p>
+
+      <form class="search-form" id="searchForm">
+        <input
+          type="text"
+          class="search-input"
+          id="ticketInput"
+          placeholder="Ej. TK-LKJH3-ABC"
+          maxlength="30"
+          required
+        >
+        <button type="submit" class="search-btn" id="searchBtn">Consultar →</button>
+      </form>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="result-card" id="resultCard">
+        <div class="rc-header">
+          <span class="rc-ticket" id="rcTicket">—</span>
+          <span class="estado-big" id="rcEstado">—</span>
+        </div>
+        <div class="rc-body">
+          <div class="rc-row"><span class="rc-key">Nombre</span><span class="rc-val" id="rcNombre">—</span></div>
+          <div class="rc-row"><span class="rc-key">Servicio</span><span class="rc-val" id="rcServicio">—</span></div>
+          <div class="rc-row"><span class="rc-key">Pack</span><span class="rc-val" id="rcPack">—</span></div>
+          <div class="rc-row"><span class="rc-key">Fecha de solicitud</span><span class="rc-val" id="rcFecha">—</span></div>
+
+          <div class="timeline">
+            <div class="timeline-title">Progreso</div>
+            <div class="timeline-steps">
+              <div class="tl-step" id="tl-pendiente">
+                <div class="tl-dot">1</div>
+                <div class="tl-label">Solicitud<br>recibida</div>
+              </div>
+              <div class="tl-step" id="tl-en_proceso">
+                <div class="tl-dot">2</div>
+                <div class="tl-label">En<br>proceso</div>
+              </div>
+              <div class="tl-step" id="tl-completado">
+                <div class="tl-dot">3</div>
+                <div class="tl-label">Proyecto<br>entregado</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p style="margin-top:24px;font-size:13px;color:var(--muted);text-align:center;">
+        ¿Tienes dudas? Escríbenos a
+        <a href="mailto:gravitystudios@gmail.com" style="color:var(--lime);">gravitystudios@gmail.com</a>
+      </p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <span class="footer-logo">Gravity Studios</span>
+      <span class="mono footer-copy">© <span id="year"></span> — Todos los derechos reservados</span>
+      <div class="footer-links">
+        <a href="/#servicios">Servicios</a>
+        <a href="/aviso-legal">Aviso legal</a>
+        <a href="/privacidad">Privacidad</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    window.addEventListener('scroll', () => {
+      document.getElementById('nav').classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    const SVC = {
+      web:           'Página Web',
+      discord_bot:   'Discord Bot',
+      video_editing: 'Video Editing',
+      gta_script:    'GTA V Script',
+      otro:          'Otro'
+    };
+
+    const ESTADOS = {
+      pendiente:   { label: 'Pendiente',   cls: 'eb-pendiente' },
+      en_proceso:  { label: 'En proceso',  cls: 'eb-en_proceso' },
+      completado:  { label: 'Completado',  cls: 'eb-completado' },
+      cancelado:   { label: 'Cancelado',   cls: 'eb-cancelado' }
+    };
+
+    // Autofill ticket from URL param
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('ticket')) {
+      document.getElementById('ticketInput').value = params.get('ticket');
+      buscar();
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      buscar();
+    });
+
+    function buscar() {
+      const ticket = document.getElementById('ticketInput').value.trim().toUpperCase();
+      const btn    = document.getElementById('searchBtn');
+      const errEl  = document.getElementById('errorMsg');
+      const card   = document.getElementById('resultCard');
+
+      if (!ticket) return;
+
+      btn.textContent = 'Buscando...';
+      btn.disabled    = true;
+      errEl.classList.remove('visible');
+      card.classList.remove('visible');
+
+      fetch('/api/contacto/' + ticket)
+        .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+        .then(function(r) {
+          if (!r.ok) throw new Error(r.data.error || 'Ticket no encontrado.');
+          mostrarResultado(r.data);
+        })
+        .catch(function(e) {
+          errEl.textContent = e.message;
+          errEl.classList.add('visible');
+        })
+        .finally(function() {
+          btn.textContent = 'Consultar →';
+          btn.disabled    = false;
+        });
+    }
+
+    function mostrarResultado(r) {
+      const card = document.getElementById('resultCard');
+
+      document.getElementById('rcTicket').textContent  = r.ticket;
+      document.getElementById('rcNombre').textContent  = r.nombre;
+      document.getElementById('rcServicio').textContent= SVC[r.servicio] || r.servicio;
+      document.getElementById('rcPack').textContent    = r.pack || '—';
+      document.getElementById('rcFecha').textContent   = new Date(r.created_at).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+
+      // Estado badge
+      const est = ESTADOS[r.estado] || { label: r.estado, cls: 'eb-pendiente' };
+      const estEl = document.getElementById('rcEstado');
+      estEl.textContent = est.label;
+      estEl.className   = 'estado-big ' + est.cls;
+
+      // Timeline
+      const order = ['pendiente', 'en_proceso', 'completado'];
+      const idx   = order.indexOf(r.estado);
+
+      order.forEach(function(step, i) {
+        const el = document.getElementById('tl-' + step);
+        if (!el) return;
+        el.classList.remove('done', 'active');
+        if (r.estado === 'cancelado') return;
+        if (i < idx)      el.classList.add('done');
+        else if (i === idx) el.classList.add('active');
+      });
+
+      card.classList.add('visible');
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  </script>
+</body>
+</html>

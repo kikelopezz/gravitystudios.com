@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Gravity Studios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:   #0e0d0b;
+      --bg2:  #161511;
+      --lime: #c8ff00;
+      --cream:#f0ede6;
+      --text: #a09d96;
+      --muted:#504e48;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body {
+      font-family:'DM Sans', sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:32px;
+      overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    /* Grid bg */
+    body::before {
+      content:'';
+      position:fixed; inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size:60px 60px;
+      mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .content { position:relative; z-index:1; }
+
+    .num {
+      font-family:'Anton', sans-serif;
+      font-size:clamp(120px, 25vw, 220px);
+      color:var(--cream);
+      line-height:1;
+      letter-spacing:.04em;
+      position:relative;
+      display:inline-block;
+    }
+
+    .num .zero {
+      color:transparent;
+      -webkit-text-stroke:3px var(--lime);
+      position:relative;
+    }
+
+    .num .zero::after {
+      content:'0';
+      position:absolute;
+      left:0;
+      color:var(--lime);
+      opacity:.15;
+      filter:blur(12px);
+    }
+
+    .label {
+      font-family:'JetBrains Mono', monospace;
+      font-size:12px;
+      color:var(--lime);
+      text-transform:uppercase;
+      letter-spacing:.2em;
+      margin-bottom:20px;
+      display:block;
+    }
+
+    h1 {
+      font-family:'Anton', sans-serif;
+      font-size:clamp(28px, 5vw, 48px);
+      color:var(--cream);
+      letter-spacing:.03em;
+      margin-bottom:16px;
+    }
+
+    p {
+      font-size:16px;
+      color:var(--text);
+      line-height:1.7;
+      max-width:420px;
+      margin:0 auto 36px;
+    }
+
+    .actions { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
+
+    .btn-lime {
+      display:inline-flex; align-items:center;
+      background:var(--lime); color:#000;
+      font-family:'DM Sans', sans-serif;
+      font-weight:700; font-size:15px;
+      padding:13px 28px; border-radius:8px;
+      text-decoration:none; transition:.2s;
+    }
+    .btn-lime:hover { background:#fff; transform:translateY(-2px); }
+
+    .btn-ghost {
+      display:inline-flex; align-items:center;
+      background:transparent; color:var(--cream);
+      font-family:'DM Sans', sans-serif;
+      font-weight:600; font-size:15px;
+      padding:12px 28px; border-radius:8px;
+      border:1px solid rgba(255,255,255,.13);
+      text-decoration:none; transition:.2s;
+    }
+    .btn-ghost:hover { border-color:var(--lime); color:var(--lime); }
+
+    .counter {
+      font-family:'JetBrains Mono', monospace;
+      font-size:12px;
+      color:var(--muted);
+      margin-top:48px;
+    }
+    .counter span { color:var(--lime); }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <div class="num">4<span class="zero">0</span>4</div>
+    <span class="label">Página no encontrada</span>
+    <h1>Esto no existe.</h1>
+    <p>La página que buscas no existe o fue movida. Vuelve al inicio y encuentra lo que necesitas.</p>
+    <div class="actions">
+      <a href="/" class="btn-lime">Volver al inicio</a>
+      <a href="/#contacto" class="btn-ghost">Contactar →</a>
+    </div>
+    <div class="counter">Redirigiendo en <span id="secs">10</span>s...</div>
+  </div>
+
+  <script>
+    var s = 10;
+    var iv = setInterval(function() {
+      s--;
+      document.getElementById('secs').textContent = s;
+      if (s <= 0) { clearInterval(iv); window.location.href = '/'; }
+    }, 1000);
+  </script>
+</body>
+</html>
