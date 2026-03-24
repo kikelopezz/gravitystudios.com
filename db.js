@@ -11,8 +11,20 @@ const db = mysql.createPool({
   connectionLimit:    10,
 });
 
-db.getConnection()
-  .then(c => { console.log('✅ MySQL conectado'); c.release(); })
-  .catch(e => { console.error('❌ MySQL error:', e.message); process.exit(1); });
+// Función para verificar la conexión
+async function testConnection() {
+  try {
+    const connection = await db.getConnection();
+    console.log('✅ MySQL conectado');
+    connection.release();
+  } catch (err) {
+    console.error('❌ MySQL error:', err.message);
+    // No cerramos el proceso automáticamente, pero podrías hacerlo si quieres
+    // process.exit(1);
+  }
+}
+
+// Ejecutar la prueba de conexión al iniciar
+testConnection();
 
 module.exports = db;
