@@ -2,7 +2,7 @@ require('dotenv').config(); // Solo para desarrollo local
 const mysql = require('mysql2/promise');
 
 const db = mysql.createPool({
-  host:     process.env.MYSQLHOST || 'centerbeam.proxy.rlwy.net', // Host real
+  host:     process.env.MYSQLHOST || 'mysql.railway.internal', // Host real
   port:     process.env.MYSQLPORT || 3306,
   database: process.env.MYSQLDATABASE || 'railway',
   user:     process.env.MYSQLUSER || 'root',
