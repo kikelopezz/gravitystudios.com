@@ -1,30 +1,27 @@
-require('dotenv').config();
+require('dotenv').config(); // Solo para desarrollo local
 const mysql = require('mysql2/promise');
 
 const db = mysql.createPool({
-  host:               process.env.DB_HOST     || 'localhost',
-  port:               process.env.DB_PORT     || 3306,
-  database:           process.env.DB_NAME     || 'kikedev',
-  user:               process.env.DB_USER     || 'root',
-  password:           process.env.DB_PASSWORD || '',
+  host:     process.env.MYSQLHOST || 'centerbeam.proxy.rlwy.net', // Host real
+  port:     process.env.MYSQLPORT || 3306,
+  database: process.env.MYSQLDATABASE || 'railway',
+  user:     process.env.MYSQLUSER || 'root',
+  password: process.env.MYSQLPASSWORD || 'QHNicTgIkdYKsrzSveirfeAmrYELHsQD',
   waitForConnections: true,
-  connectionLimit:    10,
+  connectionLimit: 10,
 });
 
-// Función para verificar la conexión
+// Función para verificar conexión
 async function testConnection() {
   try {
     const connection = await db.getConnection();
-    console.log('✅ MySQL conectado');
+    console.log('✅ MySQL conectado correctamente');
     connection.release();
   } catch (err) {
-    console.error('❌ MySQL error:', err.message);
-    // No cerramos el proceso automáticamente, pero podrías hacerlo si quieres
-    // process.exit(1);
+    console.error('❌ Error al conectar MySQL:', err.message);
   }
 }
 
-// Ejecutar la prueba de conexión al iniciar
 testConnection();
 
 module.exports = db;
