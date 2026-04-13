@@ -1,21 +1,54 @@
 require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const cors    = require('cors');
-const path    = require('path');
+const express     = require('express');
+const session     = require('express-session');
+const cors        = require('cors');
+const helmet      = require('helmet');
+const rateLimit   = require('express-rate-limit');
+const path        = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Session secret must be set via environment variable
+if (!process.env.SESSION_SECRET) {
+  console.error('❌ Missing required environment variable: SESSION_SECRET');
+  console.error('   Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
+  process.exit(1);
+}
+
+// Security headers
+app.use(helmet());
+
+// CORS — only allow explicitly configured origins (defaults to same-origin)
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : [];
+app.use(cors({
+  origin: allowedOrigins.length > 0 ? allowedOrigins : false,
+  credentials: true,
+}));
+
+// Global rate limiter — 100 requests per 15 min per IP
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
+// Body parsers with size limits
+app.use(express.json({ limit: '16kb' }));
+app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(session({
-  secret:            process.env.SESSION_SECRET || 'kikedev_secret',
+  secret:            process.env.SESSION_SECRET,
   resave:            false,
   saveUninitialized: false,
-  cookie:            { secure: false, httpOnly: true, maxAge: 8 * 60 * 60 * 1000 }
+  cookie: {
+    secure:   process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge:   8 * 60 * 60 * 1000,
+    sameSite: 'lax',
+  }
 }));
 
 // Archivos estáticos
