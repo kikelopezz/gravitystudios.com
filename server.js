@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const cors    = require('cors');
 const path    = require('path');
+const { testConnection } = require('./connection');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -39,9 +40,12 @@ app.get('/sitemap.xml', (_, res) => res.sendFile(path.join(__dirname, 'public', 
 app.get('/robots.txt',  (_, res) => res.sendFile(path.join(__dirname, 'public', 'robots.txt')));
 app.get('*',            (_, res) => res.sendFile(path.join(__dirname, 'public', '404.html')));
 
-// 🚀 INICIAR SERVIDOR (SOLO UNA VEZ)
-app.listen(PORT, () => {
-  console.log(`\n🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌐 URL: http://localhost:${PORT}`);
-  console.log(`📋 CRM: http://localhost:${PORT}/crm\n`);
+// INICIAR SERVIDOR (SOLO UNA VEZ)
+app.listen(PORT, async () => {
+  console.log(`\nServidor corriendo en puerto ${PORT}`);
+  console.log(`URL: http://localhost:${PORT}`);
+  console.log(`CRM: http://localhost:${PORT}/crm\n`);
+
+  // Verificar conexion a la base de datos al iniciar
+  await testConnection();
 });
