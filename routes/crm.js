@@ -1,5 +1,15 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const rateLimit = require('express-rate-limit');
+const db        = require('../db');
+
+// Rate limiter for login — 10 attempts per 15 min per IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiados intentos de login. Inténtalo de nuevo más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 function auth(req, res, next) {
   if (req.session?.admin) return next();
@@ -7,7 +17,7 @@ function auth(req, res, next) {
 }
 
 // POST /api/crm/login
-router.post('/login', (req, res) => {
+router.post('/login', loginLimiter, (req, res) => {
   const { user, pass } = req.body;
   if (user === process.env.ADMIN_USER && pass === process.env.ADMIN_PASS) {
     req.session.admin = true;

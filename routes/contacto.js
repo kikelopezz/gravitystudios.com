@@ -1,6 +1,27 @@
 const router     = require('express').Router();
+const rateLimit  = require('express-rate-limit');
 const db         = require('../db');
 const nodemailer = require('nodemailer');
+
+// Rate limiter for contact form — 5 submissions per 15 min per IP
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// ── Escape HTML to prevent XSS in email templates ──
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 // ── Generador de ticket ──────────────────────
 function ticket() {
@@ -67,27 +88,27 @@ function buildEmail(datos, tk) {
       <table style="width:100%;border-collapse:collapse;">
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;width:120px;">Nombre</td>
-          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#f0ede6;font-weight:600;">${datos.nombre}</td>
+          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#f0ede6;font-weight:600;">${escapeHtml(datos.nombre)}</td>
         </tr>
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;">Email</td>
-          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#c8ff00;">${datos.email}</td>
+          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#c8ff00;">${escapeHtml(datos.email)}</td>
         </tr>
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;">Discord</td>
-          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${datos.discord || '—'}</td>
+          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${escapeHtml(datos.discord) || '—'}</td>
         </tr>
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;">Servicio</td>
-          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${servicios[datos.servicio] || datos.servicio}</td>
+          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${escapeHtml(servicios[datos.servicio] || datos.servicio)}</td>
         </tr>
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;">Pack</td>
-          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${datos.pack || '—'}</td>
+          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${escapeHtml(datos.pack) || '—'}</td>
         </tr>
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;">Presupuesto</td>
-          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${datos.presupuesto || '—'}</td>
+          <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px;color:#a09d96;">${escapeHtml(datos.presupuesto) || '—'}</td>
         </tr>
       </table>
 
@@ -95,13 +116,13 @@ function buildEmail(datos, tk) {
       <div style="margin-top:20px;">
         <div style="font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Descripción</div>
         <div style="background:#1e1d18;border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:16px;font-size:14px;color:#a09d96;line-height:1.7;">
-          ${datos.descripcion}
+          ${escapeHtml(datos.descripcion)}
         </div>
       </div>
 
       <!-- CTA -->
       <div style="margin-top:24px;text-align:center;">
-        <a href="http://localhost:3000/crm"
+        <a href="${escapeHtml(process.env.APP_URL || '')}/crm"
            style="display:inline-block;background:#c8ff00;color:#000;font-weight:700;font-size:14px;padding:12px 28px;border-radius:8px;text-decoration:none;">
           Ver en el CRM →
         </a>
@@ -121,11 +142,25 @@ function buildEmail(datos, tk) {
 }
 
 // ── POST /api/contacto ───────────────────────
-router.post('/', async (req, res) => {
+router.post('/', contactLimiter, async (req, res) => {
   const { nombre, email, discord, servicio, pack, presupuesto, descripcion } = req.body;
 
   if (!nombre || !email || !servicio || !descripcion)
     return res.status(400).json({ error: 'Faltan campos obligatorios.' });
+
+  // Input length validation
+  if (typeof nombre !== 'string' || nombre.length > 255)
+    return res.status(400).json({ error: 'Nombre demasiado largo (máx. 255 caracteres).' });
+  if (typeof email !== 'string' || email.length > 255)
+    return res.status(400).json({ error: 'Email demasiado largo (máx. 255 caracteres).' });
+  if (discord && (typeof discord !== 'string' || discord.length > 255))
+    return res.status(400).json({ error: 'Discord demasiado largo (máx. 255 caracteres).' });
+  if (pack && (typeof pack !== 'string' || pack.length > 100))
+    return res.status(400).json({ error: 'Pack demasiado largo (máx. 100 caracteres).' });
+  if (presupuesto && (typeof presupuesto !== 'string' || presupuesto.length > 50))
+    return res.status(400).json({ error: 'Presupuesto demasiado largo (máx. 50 caracteres).' });
+  if (typeof descripcion !== 'string' || descripcion.length > 5000)
+    return res.status(400).json({ error: 'Descripción demasiado larga (máx. 5000 caracteres).' });
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
     return res.status(400).json({ error: 'Email no válido.' });

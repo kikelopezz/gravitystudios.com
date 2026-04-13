@@ -1,11 +1,38 @@
 const router     = require('express').Router();
+const rateLimit  = require('express-rate-limit');
 const db         = require('../db');
 const nodemailer = require('nodemailer');
 
+// Rate limiter for chat — 10 messages per 15 min per IP
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Demasiados mensajes. Inténtalo de nuevo más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Escape HTML to prevent XSS in email templates
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // POST /api/chat — recibe mensaje del chat en vivo
-router.post('/', async (req, res) => {
+router.post('/', chatLimiter, async (req, res) => {
   const { nombre, mensaje } = req.body;
   if (!nombre || !mensaje) return res.status(400).json({ error: 'Faltan datos.' });
+
+  // Input length validation
+  if (typeof nombre !== 'string' || nombre.length > 255)
+    return res.status(400).json({ error: 'Nombre demasiado largo (máx. 255 caracteres).' });
+  if (typeof mensaje !== 'string' || mensaje.length > 2000)
+    return res.status(400).json({ error: 'Mensaje demasiado largo (máx. 2000 caracteres).' });
 
   try {
     // Guardar en BD si existe la tabla (opcional)
@@ -44,12 +71,12 @@ router.post('/', async (req, res) => {
             </div>
             <div style="padding:20px 24px;">
               <table style="width:100%;">
-                <tr><td style="padding:8px 0;font-size:12px;color:#504e48;font-family:monospace;width:80px;">Nombre</td><td style="padding:8px 0;font-size:14px;color:#eef0e8;font-weight:600;">${nombre}</td></tr>
+                <tr><td style="padding:8px 0;font-size:12px;color:#504e48;font-family:monospace;width:80px;">Nombre</td><td style="padding:8px 0;font-size:14px;color:#eef0e8;font-weight:600;">${escapeHtml(nombre)}</td></tr>
                 <tr><td style="padding:8px 0;font-size:12px;color:#504e48;font-family:monospace;">Hora</td><td style="padding:8px 0;font-size:13px;color:#8a8f82;">${new Date().toLocaleString('es-ES')}</td></tr>
               </table>
               <div style="background:#191c19;border-radius:8px;padding:16px;margin-top:16px;">
                 <p style="font-size:12px;color:#504e48;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;">Mensaje</p>
-                <p style="font-size:15px;color:#8a8f82;line-height:1.6;margin:0;">${mensaje}</p>
+                <p style="font-size:15px;color:#8a8f82;line-height:1.6;margin:0;">${escapeHtml(mensaje)}</p>
               </div>
             </div>
           </div>`
